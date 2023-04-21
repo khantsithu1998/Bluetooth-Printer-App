@@ -11,7 +11,9 @@ import {
 import { BleManager, Device } from 'react-native-ble-plx';
 import { check, PERMISSIONS, request, RESULTS } from 'react-native-permissions';
 import { Button, List, ActivityIndicator, IconButton } from 'react-native-paper';
-import ThermalPrinterModule from 'react-native-thermal-printer'
+import {
+  BLEPrinter,
+} from "react-native-thermal-receipt-printer";
 
 interface IDeviceItemProps {
   item: Device;
@@ -141,47 +143,48 @@ const BluetoothDevicesList = () => {
   //   "                         \n";
 
   const text =
-  '[C]<img>https://via.placeholder.com/300.jpg</img>\n' +
-  '[L]\n' +
-  "[C]<u><font size='big'>ORDER N°045</font></u>\n" +
-  '[L]\n' +
-  '[C]================================\n' +
-  '[L]\n' +
-  '[L]<b>BEAUTIFUL SHIRT</b>[R]6000 MMK\n' +
-  '[L]  + Size : S\n' +
-  '[L]\n' +
-  '[L]<b>AWESOME HAT</b>[R]4000 MMK\n' +
-  '[L]  + Size : 57/58\n' +
-  '[L]\n' +
-  '[C]--------------------------------\n' +
-  '[R]TOTAL PRICE :[R]10000 MMK\n' +
-  '[R]TAX :[R]200 MMK\n' +
-  '[L]\n' +
-  '[C]================================\n' +
-  '[L]\n' +
-  "[L]<font size='tall'>Customer :</font>\n" +
-  '[L]Khant Si Thu\n' +
-  '[L]North Okkalapa\n' +
-  '[L]Tel : +959942245083\n' +
-  '[L]\n' +
-  "[C]<barcode type='ean13' height='10'>831254784551</barcode>\n" +
-  // "[C]<qrcode size='20'>http://www.developpeur-web.dantsu.com/</qrcode>\n" +
-  '[L]\n' +
-  '[L]\n' +
-  '[L]\n' +
-  '[L]\n' +
-  '[L]\n';
+  '<L>\n' +
+  "<C>ORDER No. 45 <C/>\n" +
+  '<L>\n' +
+  '<C>================================</C>\n' +
+  '<L>\n' +
+  '<L>BEAUTIFUL SHIRT <R>6000 MMK\n' +
+  '<L>  + Size : S\n' +
+  '<L>\n' +
+  '<L>AWESOME HAT <R>4000 MMK\n' +
+  '<L>  + Size : 57/58\n' +
+  '<L>\n' +
+  '<C>--------------------------------\n' +
+  '<R>TOTAL PRICE :<R>10000 MMK\n' +
+  '<R>TAX :<R>200 MMK\n' +
+  '<L>\n' +
+  '<C>================================\n' +
+  '<L>\n' +
+  "<L>Customer : \n" +
+  '<L>Khant Si Thu\n' +
+  '<L>North Okkalapa\n' +
+  '<L>Tel : +959942245083\n' +
+  '<L>\n' +
+  '<L>\n' +
+  '<L>\n' +
+  '<L>\n' +
+  '<L>\n' +
+  '<L>\n';
+
 
 
   // console.log(text)
-
-
+  
   const printText = async (device: Device) => {
     try {
-      await ThermalPrinterModule.printBluetooth({
-        payload: text,
-        // printerNbrCharactersPerLine: 100,
-      });
+      // await ThermalPrinterModule.printBluetooth({
+      //   payload: text,
+      //   // printerNbrCharactersPerLine: 100,
+      // });
+      await BLEPrinter.init();
+      await BLEPrinter.connectPrinter(device.id);
+      BLEPrinter.printBill(text)
+      
       Alert.alert('Printed', `Text printed to ${device.name || 'Unknown Device'}`);
     } catch (error) {
       Alert.alert('Error', 'Unable to print the text');
