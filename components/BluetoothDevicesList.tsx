@@ -13,23 +13,13 @@ import { check, PERMISSIONS, request, RESULTS } from 'react-native-permissions';
 import { Button, List, ActivityIndicator, IconButton } from 'react-native-paper';
 import {
   BLEPrinter,
-} from "react-native-thermal-receipt-printer";
+  COMMANDS,
+  ColumnAlignment,
+} from "react-native-thermal-receipt-printer-image-qr";
 
 interface IDeviceItemProps {
   item: Device;
 }
-
-class EscPosPrinterCommands {
-  static ESC_ALIGN_LEFT = "\u001b" + "a" + "0";
-  static ESC_ALIGN_CENTER = "\u001b" + "a" + "1";
-  static ESC_ALIGN_RIGHT = "\u001b" + "a" + "2";
-  static ESC_BOLD = "\u001b" + "E" + "1";
-  static ESC_BOLD_OFF = "\u001b" + "E" + "0";
-  static ESC_UNDERLINE = "\u001b" + "-" + "1";
-  static ESC_UNDERLINE_OFF = "\u001b" + "-" + "0";
-  static ESC_LINE_SEPARATOR = "-------------------------";
-}
-
 
 const requestLocationPermission = async () => {
   const permission = Platform.select({
@@ -98,93 +88,48 @@ const BluetoothDevicesList = () => {
     }
   };
 
-  // const text =
-  // "      " + EscPosPrinterCommands.ESC_ALIGN_CENTER + "ORDER N°045" + EscPosPrinterCommands.ESC_ALIGN_LEFT + "       \n" +
-  // EscPosPrinterCommands.ESC_LINE_SEPARATOR +
-  // "                         \n" +
-  // EscPosPrinterCommands.ESC_BOLD + " BEAUTIFUL SHIRT" + EscPosPrinterCommands.ESC_BOLD_OFF + "  9.99e  \n" +
-  // "   + Size : S           \n" +
-  // "                         \n" +
-  // EscPosPrinterCommands.ESC_BOLD + " AWESOME HAT" + EscPosPrinterCommands.ESC_BOLD_OFF + "    24.99e  \n" +
-  // "   + Size : 57/58        \n" +
-  // "                         \n" +
-  // EscPosPrinterCommands.ESC_LINE_SEPARATOR +
-  // " TOTAL PRICE :  34.98e   \n" +
-  // " TAX :          4.23e    \n" +
-  // "                         \n" +
-  // EscPosPrinterCommands.ESC_LINE_SEPARATOR +
-  // EscPosPrinterCommands.ESC_UNDERLINE + " Customer :" + EscPosPrinterCommands.ESC_UNDERLINE_OFF + "              \n" +
-  // " Khant Si Thu            \n" +
-  // " North oKkalapa       \n" +
-  // " 31547 PERPETES          \n" +
-  // " Tel : +33801201456      \n" +
-  // "                         \n";
 
-  // const text =
-  //   "      ORDER N°045       \n" +
-  //   "-------------------------\n" +
-  //   "                         \n" +
-  //   " BEAUTIFUL SHIRT  6000 MMK  \n" +
-  //   " Size : S           \n" +
-  //   "                         \n" +
-  //   " AWESOME HAT    4000 MMK \n" +
-  //   "   + Size : 57/58        \n" +
-  //   "                         \n" +
-  //   "-------------------------\n" +
-  //   " TOTAL PRICE :  34.98e   \n" +
-  //   " TAX :          4.23e    \n" +
-  //   "                         \n" +
-  //   "-------------------------\n" +
-  //   " Customer :              \n" +
-  //   " Khant Si Thu            \n" +
-  //   " 5 rue des girafes       \n" +
-  //   " 31547 PERPETES          \n" +
-  //   " Tel : +33801201456      \n" +
-  //   "                         \n";
+  const BOLD_ON = COMMANDS.TEXT_FORMAT.TXT_BOLD_ON;
+  const BOLD_OFF = COMMANDS.TEXT_FORMAT.TXT_BOLD_OFF;
+  let orderList = [
+    ["1. Skirt Palas Labuh Muslimah Fashion", "x2", "500$"],
+    ["2. BLOUSE ROPOL VIRAL MUSLIMAH FASHION", "x4222", "500$"],
+    [
+      "3. Women Crew Neck Button Down Ruffle Collar Loose Blouse",
+      "x1",
+      "30000000000000$",
+    ],
+    ["4. Retro Buttons Up Full Sleeve Loose", "x10", "200$"],
+    ["5. Retro Buttons Up", "x10", "200$"],
+  ];
+  let columnAlignment = [
+    ColumnAlignment.LEFT,
+    ColumnAlignment.CENTER,
+    ColumnAlignment.RIGHT,
+  ];
+  let columnWidth = [46 - (7 + 12), 7, 12];
+  const header = ["Product list", "Qty", "Price"];
 
-  const text =
-  '<L>\n' +
-  "<C>ORDER No. 45 <C/>\n" +
-  '<L>\n' +
-  '<C>================================</C>\n' +
-  '<L>\n' +
-  '<L>BEAUTIFUL SHIRT <R>6000 MMK\n' +
-  '<L>  + Size : S\n' +
-  '<L>\n' +
-  '<L>AWESOME HAT <R>4000 MMK\n' +
-  '<L>  + Size : 57/58\n' +
-  '<L>\n' +
-  '<C>--------------------------------\n' +
-  '<R>TOTAL PRICE :<R>10000 MMK\n' +
-  '<R>TAX :<R>200 MMK\n' +
-  '<L>\n' +
-  '<C>================================\n' +
-  '<L>\n' +
-  "<L>Customer : \n" +
-  '<L>Khant Si Thu\n' +
-  '<L>North Okkalapa\n' +
-  '<L>Tel : +959942245083\n' +
-  '<L>\n' +
-  '<L>\n' +
-  '<L>\n' +
-  '<L>\n' +
-  '<L>\n' +
-  '<L>\n';
-
-
-
-  // console.log(text)
-  
   const printText = async (device: Device) => {
     try {
-      // await ThermalPrinterModule.printBluetooth({
-      //   payload: text,
-      //   // printerNbrCharactersPerLine: 100,
-      // });
       await BLEPrinter.init();
       await BLEPrinter.connectPrinter(device.id);
-      BLEPrinter.printBill(text)
-      
+      BLEPrinter.printColumnsText(header, columnWidth, columnAlignment, [
+        `${BOLD_ON}`,
+        "",
+        "",
+      ]);
+      for (let i in orderList) {
+        BLEPrinter.printColumnsText(orderList[i], columnWidth, columnAlignment, [
+          `${BOLD_OFF}`,
+          "",
+          "",
+        ]);
+      }
+      BLEPrinter.printText('\n\n')
+      BLEPrinter.printBill(`<C>Thank you\n`);
+
+
       Alert.alert('Printed', `Text printed to ${device.name || 'Unknown Device'}`);
     } catch (error) {
       Alert.alert('Error', 'Unable to print the text');
