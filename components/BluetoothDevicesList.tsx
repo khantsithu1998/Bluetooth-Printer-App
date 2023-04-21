@@ -7,6 +7,7 @@ import {
   Platform,
   StyleSheet,
   Alert,
+  Linking,
 } from 'react-native';
 import { BleManager, Device } from 'react-native-ble-plx';
 import { check, PERMISSIONS, request, RESULTS } from 'react-native-permissions';
@@ -56,13 +57,38 @@ const BluetoothDevicesList = () => {
 
   useEffect(() => {
     const subscription = manager.onStateChange((state) => {
+      if (state === 'PoweredOff') {
+        Alert.alert(
+          'Enable Bluetooth',
+          'Please enable Bluetooth to use this app.',
+          [
+            {
+              text: 'Open Settings',
+              onPress: () => {
+                if (Platform.OS === 'android') {
+                  Linking.openSettings();
+                } else {
+                  Linking.openURL('app-settings:');
+                }
+              },
+            },
+            {
+              text: 'Cancel',
+              onPress: () => {},
+              style: 'cancel',
+            },
+          ],
+          { cancelable: false },
+        );
+      }
       if (state === 'PoweredOn') {
         subscription.remove();
       }
     }, true);
+
     return () => subscription.remove();
   }, []);
-
+  
   const connectToDevice = async (device: Device) => {
     try {
       const connectedDevice = await device.connect();
