@@ -68,7 +68,7 @@ const BluetoothDevicesList = () => {
       const connectedDevice = await device.connect();
       const services = await connectedDevice.discoverAllServicesAndCharacteristics();
       // Connection and pairing is successful
-      // Alert.alert('Connected', `Connected to ${device.name || 'Unknown Device'}`);
+      Alert.alert('Connected', `Connected to ${device.name || 'Unknown Device'}`);
       console.log('Connected device services:', services);
       setConnectedDeviceId(device.id);
     } catch (error) {
