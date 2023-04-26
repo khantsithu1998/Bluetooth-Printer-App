@@ -2,7 +2,6 @@ import React, { useEffect } from 'react';
 import { PermissionsAndroid, Platform, StatusBar } from 'react-native';
 import BluetoothDevicesList from './components/BluetoothDevicesList';
 import { check, PERMISSIONS, request, RESULTS } from 'react-native-permissions';
-import { BleManager } from 'react-native-ble-plx';
 
 
 const requestLocationPermission = async () => {

@@ -74,7 +74,7 @@ const BluetoothDevicesList = () => {
             },
             {
               text: 'Cancel',
-              onPress: () => {},
+              onPress: () => { },
               style: 'cancel',
             },
           ],
@@ -88,7 +88,7 @@ const BluetoothDevicesList = () => {
 
     return () => subscription.remove();
   }, []);
-  
+
   const connectToDevice = async (device: Device) => {
     try {
       const connectedDevice = await device.connect();
@@ -189,6 +189,10 @@ const BluetoothDevicesList = () => {
       setScanning(false);
     }, 10000);
   };
+
+  useEffect(() => {
+    console.log(`Devices : ${devices}`);
+  }, [devices])
 
   const renderItem = ({ item }: IDeviceItemProps) => {
     const isConnected = connectedDeviceId === item.id;
