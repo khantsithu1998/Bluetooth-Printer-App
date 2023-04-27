@@ -9,17 +9,18 @@ import {
   Alert,
   Linking,
 } from 'react-native';
-import { BleManager, Device } from 'react-native-ble-plx';
+// import { BleManager, Device } from 'react-native-ble-plx';
 import { check, PERMISSIONS, request, RESULTS } from 'react-native-permissions';
 import { Button, List, ActivityIndicator, IconButton } from 'react-native-paper';
 import {
   BLEPrinter,
   COMMANDS,
   ColumnAlignment,
+  IBLEPrinter,
 } from "react-native-thermal-receipt-printer-image-qr";
 
 interface IDeviceItemProps {
-  item: Device;
+  item: IBLEPrinter;
 }
 
 const requestLocationPermission = async () => {
@@ -39,11 +40,12 @@ const requestLocationPermission = async () => {
 };
 
 const BluetoothDevicesList = () => {
-  const [devices, setDevices] = useState<Device[]>([]);
+  const [devices, setDevices] = useState<IBLEPrinter[]>([]);
   const [scanning, setScanning] = useState(false);
   const [connectedDeviceId, setConnectedDeviceId] = useState<string | null>(null);
+  const [deviceAddresses, setDeviceAddresses] = useState<Set<string>>(new Set());
 
-  const manager = new BleManager();
+  // const manager = new BleManager();
 
   useEffect(() => {
     const initPermissions = async () => {
@@ -51,63 +53,34 @@ const BluetoothDevicesList = () => {
       if (!granted) {
         console.log('Location permission not granted');
       }
+
+      if(granted){
+        await BLEPrinter.init();
+      }
     };
     initPermissions();
   }, []);
 
-  useEffect(() => {
-    const subscription = manager.onStateChange((state) => {
-      if (state === 'PoweredOff') {
-        Alert.alert(
-          'Enable Bluetooth',
-          'Please enable Bluetooth to use this app.',
-          [
-            {
-              text: 'Open Settings',
-              onPress: () => {
-                if (Platform.OS === 'android') {
-                  Linking.openSettings();
-                } else {
-                  Linking.openURL('app-settings:');
-                }
-              },
-            },
-            {
-              text: 'Cancel',
-              onPress: () => { },
-              style: 'cancel',
-            },
-          ],
-          { cancelable: false },
-        );
-      }
-      if (state === 'PoweredOn') {
-        subscription.remove();
-      }
-    }, true);
 
-    return () => subscription.remove();
-  }, []);
-
-  const connectToDevice = async (device: Device) => {
+  const connectToDevice = async (device: IBLEPrinter) => {
     try {
-      const connectedDevice = await device.connect();
-      const services = await connectedDevice.discoverAllServicesAndCharacteristics();
-      // Connection and pairing is successful
-      Alert.alert('Connected', `Connected to ${device.name || 'Unknown Device'}`);
-      console.log('Connected device services:', services);
-      setConnectedDeviceId(device.id);
+      
+      await BLEPrinter.connectPrinter(device.inner_mac_address);
+      Alert.alert('Connected', `Connected to ${device.device_name || 'Unknown Device'}`);
+     
+      setConnectedDeviceId(device.inner_mac_address);
     } catch (error) {
       Alert.alert('Error', 'Unable to connect to the device');
       console.log('Error connecting to device:', error);
     }
   };
 
-  const disconnectFromDevice = async (device: Device) => {
+  const disconnectFromDevice = async (device: IBLEPrinter) => {
     try {
-      await device.cancelConnection();
+      // await device.cancelConnection();
+      await BLEPrinter.closeConn()
       setConnectedDeviceId(null);
-      Alert.alert('Disconnected', `Disconnected from ${device.name || 'Unknown Device'}`);
+      Alert.alert('Disconnected', `Disconnected from ${device.device_name || 'Unknown Device'}`);
     } catch (error) {
       Alert.alert('Error', 'Unable to disconnect from the device');
       console.log('Error disconnecting from device:', error);
@@ -136,10 +109,9 @@ const BluetoothDevicesList = () => {
   let columnWidth = [46 - (7 + 12), 7, 12];
   const header = ["Product list", "Qty", "Price"];
 
-  const printText = async (device: Device) => {
+  const printText = async (device: IBLEPrinter) => {
     try {
-      await BLEPrinter.init();
-      await BLEPrinter.connectPrinter(device.id);
+    
       BLEPrinter.printColumnsText(header, columnWidth, columnAlignment, [
         `${BOLD_ON}`,
         "",
@@ -156,51 +128,43 @@ const BluetoothDevicesList = () => {
       BLEPrinter.printBill(`<C>Thank you\n`);
 
 
-      Alert.alert('Printed', `Text printed to ${device.name || 'Unknown Device'}`);
+      Alert.alert('Printed', `Text printed to ${device.device_name || 'Unknown Device'}`);
     } catch (error) {
       Alert.alert('Error', 'Unable to print the text');
       console.log('Error printing text:', error);
     }
   };
 
-  const scanDevices = () => {
+  const scanDevices = async () => {
     setScanning(true);
-    manager.startDeviceScan(null, null, (error, device) => {
-      if (error) {
-        console.log('Error scanning devices:', error);
-        setScanning(false);
-        return;
-      }
+    try {
+      const deviceList = await BLEPrinter.getDeviceList();
+      const newDevices = deviceList.filter(device => !deviceAddresses.has(device.inner_mac_address));
 
-      // Add discovered device to the list
-      setDevices((prevState) => {
-        const existingDevice = prevState.find((d) => d.id === device?.id);
-        if (!existingDevice) {
-          return device ? [...prevState, device] : prevState;
-        } else {
-          return prevState;
-        }
+      setDevices(prevDevices => [...prevDevices, ...newDevices]);
+      setDeviceAddresses(prevAddresses => {
+        const updatedAddresses = new Set(prevAddresses);
+        newDevices.forEach(device => updatedAddresses.add(device.inner_mac_address));
+        return updatedAddresses;
       });
-    });
 
-    // Stop scanning after 10 seconds
-    setTimeout(() => {
-      manager.stopDeviceScan();
-      setScanning(false);
-    }, 10000);
+    } catch (error) {
+      console.log('Error getting device list:', error);
+    }
+    setScanning(false);
   };
 
   useEffect(() => {
-    console.log(`Devices : ${devices}`);
+    console.log(`Devices : ${JSON.stringify(devices)}`);
   }, [devices])
 
   const renderItem = ({ item }: IDeviceItemProps) => {
-    const isConnected = connectedDeviceId === item.id;
+    const isConnected = connectedDeviceId === item.inner_mac_address;
 
     return (
-      item.name ? <List.Item
-        title={item.name || 'Unknown Device'}
-        description={isConnected ? 'Connected' : `ID: ${item.id}`}
+      item.device_name ? <List.Item
+        title={item.device_name || 'Unknown Device'}
+        description={isConnected ? 'Connected' : `ID: ${item.inner_mac_address}`}
         left={() => <List.Icon icon="bluetooth" />}
         right={() => (
           isConnected ? (
@@ -243,7 +207,7 @@ const BluetoothDevicesList = () => {
       <FlatList
         data={devices}
         renderItem={renderItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.inner_mac_address}
       />
     </View>
   );

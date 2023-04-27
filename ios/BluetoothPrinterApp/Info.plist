@@ -41,6 +41,12 @@
 	<string>Bluetooth Printer requires BluetoothApp access to connect to printers</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>BluetoothPrinterApp requires location access to provide personalized recommendations based on your current location</string>
+	<key>UIAppFonts</key>
+	<array>
+		<string>MaterialCommunityIcons.ttf</string>
+		<string>MaterialIcons.ttf</string>
+		<string>AntDesign.ttf</string>
+	</array>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>bluetooth-central</string>
