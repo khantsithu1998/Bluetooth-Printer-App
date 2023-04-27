@@ -16,7 +16,6 @@
   "dependencies": {
     "react": "18.2.0",
     "react-native": "0.71.7",
-    "react-native-ble-plx": "^2.0.3",
     "react-native-paper": "^5.7.0",
     "react-native-permissions": "^3.8.0",
     "react-native-ping": "^1.2.7",
